@@ -65,11 +65,17 @@ class ContentTypesTests(TestCase):
 
         if Site._meta.installed:
             current_site = Site.objects.get_current()
+
+            expected = "/usrs/john/"
+            override = settings.ABSOLUTE_URL_OVERRIDES.get("%s.%s" % (obj._meta.app_label, obj._meta.module_name))
+            if override:
+                expected = override(obj)
+
             response = shortcut(request, user_ct.id, obj.id)
-            self.assertEqual("http://%s/users/john/" % current_site.domain,
+            self.assertEqual("http://%s%s" % (current_site.domain, expected),
                              response._headers.get("location")[1])
 
         Site._meta.installed = False
         response = shortcut(request, user_ct.id, obj.id)
-        self.assertEqual("http://Example.com/users/john/",
+        self.assertEqual("http://Example.com%s" % expected,
                          response._headers.get("location")[1])
